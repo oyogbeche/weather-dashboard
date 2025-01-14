@@ -12,9 +12,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-      AWS_BUCKET_NAME: $AWS_BUCKET_NAME
-
+      OPENWEATHER_API_KEY: mock_api_key
+      AWS_BUCKET_NAME: mock_bucket
     steps:
       - name: Check out the code
         uses: actions/checkout@v4

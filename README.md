@@ -1,8 +1,6 @@
 # 30 Days DevOps Challenge - Weather Dashboard
 
-Day 1: Building a weather data collection system using AWS S3 and OpenWeather API
-
-# Weather Data Collection System - DevOps Day 1 Challenge
+Building a weather data collection system using AWS S3 and OpenWeather API
 
 ## Project Overview
 This project is a Weather Data Collection System that demonstrates core DevOps principles by combining:
@@ -29,18 +27,19 @@ This project is a Weather Data Collection System that demonstrates core DevOps p
   - boto3 (AWS SDK)
   - python-dotenv
   - requests
+  - pytest
 
-```markdown
 ## Project Structure
+```markdown
 weather-dashboard/
-  src/
-    __init__.py
-    weather_dashboard.py
-  tests/
-  data/
-  .env
-  .gitignore
-  requirements.txt
+├── src/                      # Source code for the weather dashboard
+│   ├── __init__.py           # Initialization file for the package
+│   └── weather_dashboard.py  # Main weather dashboard application logic
+├── tests/                    # Unit and integration tests
+├── .env.example              # Example for configurable Env variables
+├── .gitignore                # ignored files
+├── README.md                 # Project documentation
+└── requirements.txt          # Python dependencies
 ```
 
 ## Setup Instructions
@@ -75,13 +74,11 @@ weather-dashboard/
     python src/weather_dashboard.py
 ```
 ### What I Learned
-
-Python best practices for API integration
-Error handling in distributed systems
+- Python best practices for API integration
+- Error handling in distributed systems
+- Python tests for code quality
+- CI/CD for automated testing
 
 
 ### Future Enhancements
-Add weather forecasting
-Implement data visualization
-Create automated testing
-Set up CI/CD pipeline
+- Implement data visualization

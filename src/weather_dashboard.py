@@ -31,20 +31,28 @@ class WeatherDashboard:
             logging.info(f"s3 Bucket '{self.bucket_name}' already exists")
         except:
             logging.info(f"Creating bucket '{self.bucket_name}'")
-        try:
-            self.s3_client.create_bucket(
-                Bucket=self.bucket_name,
-                CreateBucketConfiguration={
-                    'LocationConstraint': self.region
-                }
-            )
-            logging.info(f"'{self.bucket_name}' created successfully in '{self.region}'")
-        except Exception as e:
-            logging.error(f"failed to create bucket: {e}")
+            try:
+                self.s3_client.create_bucket(
+                    Bucket=self.bucket_name,
+                    CreateBucketConfiguration={
+                        'LocationConstraint': self.region
+                    }
+                )
+                logging.info(f"'{self.bucket_name}' created successfully in '{self.region}'")
+            except Exception as e:
+                logging.error(f"failed to create bucket: {e}")
 
-    def fetch_weather(self, city,):
+    def fetch_weather(self, city, data_type):
         """Fetch weather data from openweather API"""
-        base_url= "http://api.openweathermap.org/data/2.5/weather"
+        base_url= {
+            "current": "http://api.openweathermap.org/data/2.5/weather",
+            "forecast": "http://api.openweathermap.org/data/2.5/forecast"
+        }.get(data_type)
+
+        if not base_url:
+            logging.info(f"Invalid data type '{data_type}', must be 'current' or 'forecast'")
+            return None
+        
         params = {
             "q": city,
             "appid": self.api_key,
@@ -57,28 +65,35 @@ class WeatherDashboard:
             return response.json()
         except requests.exceptions.RequestException as e:
             logging.error(f"Error fetching weather data for '{city}': {e}")
-            return none
+            return None
 
-    def save_to_s3(self, weather_data, city):
+    def save_to_s3(self, data, city, data_type):
         """save weather data to s3 bucket"""
-        if not weather_data:
-            logging.error(f"No weather data for '{city}'")
-            return false
+        if not data:
+            logging.error(f"No data provided for '{data_type}' weather")
+            return False
         
         timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
-        filename = f"weather-data/{city}-{timestamp}.json"
+        filename = f"weather-data/{data_type}/{city}-{timestamp}.json"
+
+        # Add a timestamp to the data 
+        data['timestamp'] = timestamp
+
+        serialized_data = json.dumps(data)
+
+        logging.info (f"Saving {data_type} data for {city} to S3")
 
         try:
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
                 Key=filename,
-                Body=json.dumps(weather_data),
+                Body=serialized_data,
                 ContentType='application/json'
             )
-            logging.info(f"Weather data for '{city}' saved to S3 as '{filename}'")
+            logging.info(f"Saved '{data_type}' data for '{city}' to S3 as '{filename}' successfully ")
             return True
         except Exception as e:
-            logging.error(f"Failed to save weather data for '{city}' to S3: {e}")
+            logging.error(f"Failed to save '{data_type}' data for '{city}' to S3: {e}")
             return False
 
 def main():
@@ -90,8 +105,8 @@ def main():
         cities = ["Lagos", "Abuja", "Ohio", "Georgia", "Houston"]
 
         for city in cities:
-            logging.info(f"fetching weather data for '{city}'")
-            weather_data = dashboard.fetch_weather(city)
+            logging.info(f"\nFetching current weather for {city}...")
+            weather_data = dashboard.fetch_weather(city, data_type="current")
 
             if weather_data:
                 temp = weather_data['main']['temp']
@@ -100,14 +115,30 @@ def main():
                 description = weather_data['weather'][0]['description']
 
                 logging.info(
-                    f"Temperature: {temp}°F\n"
-                    f"Feels like: {feels_like}°F\n"
+                    f"Temperature: {temp}°C\n"
+                    f"Feels like: {feels_like}°C\n"
                     f"Humidity: {humidity}%\n"
                     f"Conditions: {description}\n"
                 )
 
                 # save to s3
-                dashboard.save_to_s3(weather_data, city)
+                dashboard.save_to_s3(weather_data, city, data_type="current")
+            
+            logging.info(f"\nWeather forecast for {city}:")
+            forecast_weather = dashboard.fetch_weather(city, data_type="forecast")
+            
+            if forecast_weather:
+                for forecast in forecast_weather['list'][:3]:  # Display first 3 forecast entries
+                    forecast_time = forecast['dt_txt']
+                    forecast_temp = forecast['main']['temp']
+                    forecast_desc = forecast['weather'][0]['description']
+                    logging.info(
+                        f"Forecast time: {forecast_time}\n"
+                        f"Forecast Temperature: {forecast_temp}°C\n"
+                        f"Forcast Conditions: {forecast_desc}\n"
+                    )
+                    # save to s3
+                    dashboard.save_to_s3(weather_data, city, data_type="forecast")
             else:
                 logging.warning(f"Weather data for '{city}' could not be fetched")
     except Exception as e:

@@ -32,6 +32,7 @@ This project is a Weather Data Collection System that demonstrates core DevOps p
 ## Project Structure
 ```markdown
 weather-dashboard/
+├──.github/workflows          # CI for automated testing
 ├── src/                      # Source code for the weather dashboard
 │   ├── __init__.py           # Initialization file for the package
 │   └── weather_dashboard.py  # Main weather dashboard application logic
